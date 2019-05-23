@@ -14,7 +14,8 @@ type Server struct {
 	Port int
 	//服务器名称
 	Name string
-
+	//Router方法
+	Router z_interface.IRouter
 }
 
 func NewServer(name string) z_interface.IServer {
@@ -23,20 +24,23 @@ func NewServer(name string) z_interface.IServer {
 		IPVersion:"tcp4",
 		IP:"0.0.0.0",
 		Port:8999,
+		Router:nil,
 	}
 	return s
 }
 
 //定义一个具有回显功能 针对type HandleFunc func(*net.TCPConn,[]byte,int)error
-func CallBackBusi(conn *net.TCPConn,data []byte,cnt int)error{
+func CallBackBusi(request z_interface.IRequest)error{
 	fmt.Println("【conn Handle】 CallBack..")
+	conn := request.GetConnection().GetTCPConnection()
+	data := request.GetData()
+	cnt := request.GetDataLen()
 	if _,err := conn.Write(data[:cnt]);err != nil{
 		fmt.Println("write back err:",err)
 		return err
 	}
 
 	return nil
-
 
 }
 
@@ -45,11 +49,13 @@ func CallBackBusi(conn *net.TCPConn,data []byte,cnt int)error{
 //启动服务器
 func (s *Server)Start(){
 	fmt.Printf("[start] Server Linstenner at IP : %s, Port : %d, is Strating...\n",s.IP,s.Port)
+
 	addr ,err := net.ResolveTCPAddr(s.IPVersion,fmt.Sprintf("%s:%d",s.IP,s.Port))
 	if err != nil{
 		fmt.Println("ResolveTCPAddr err:",err)
 		return
 	}
+
 	listenner ,err := net.ListenTCP(s.IPVersion,addr)
 	if err != nil{
 		fmt.Println("ListenTCP err:",err)
@@ -69,7 +75,9 @@ func (s *Server)Start(){
 				continue
 			}
 
-			dealConn := NewConnection(conn,cid,CallBackBusi)
+
+			//dealConn := NewConnection(conn,cid,CallBackBusi)
+			dealConn := NewConnection(conn,cid,s.Router)
 			cid ++
 
 			go dealConn.Start()
@@ -104,4 +112,8 @@ func (s *Server)Stop(){
 func (s *Server)Serve(){
 	s.Start()
 	select {}
+}
+//添加路由
+func(s *Server)AddRouter(router z_interface.IRouter){
+	s.Router = router
 }

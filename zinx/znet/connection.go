@@ -20,15 +20,19 @@ type Connection struct {
 	//当前连接所绑定的业务处理方法
 	handleAPI z_interface.HandleFunc
 
+	//Router成员
+	Router z_interface.IRouter
+
 }
 
 //初始化连接方法
-func NewConnection(conn *net.TCPConn,connID uint32,callback_api z_interface.HandleFunc)z_interface.IConnection{
+func NewConnection(conn *net.TCPConn,connID uint32,router z_interface.IRouter)z_interface.IConnection{
 	c := &Connection{
 		Conn:conn,
 		ConnID:connID,
-		handleAPI:callback_api,
+		//handleAPI:callback_api,
 		isClosed:false,
+		Router:router,
 	}
 
 	return c
@@ -47,14 +51,23 @@ func(c *Connection)StartRead(){
 			continue
 		}
 
+		req := NewRequest(c,buf,cnt)
+
 		//将数据传递给定义好的handle回调
-		if err := c.handleAPI(c.Conn,buf,cnt);err != nil{
-			fmt.Println("ConnID:",c.ConnID,"Handle is err : ",err)
+		//if err := c.handleAPI(c.Conn,buf,cnt);err != nil{
+		/*
+		//抽离请求
+		if err := c.handleAPI(req);err != nil{
+				fmt.Println("ConnID:",c.ConnID,"Handle is err : ",err)
 			break
 		}
+		*/
+		go func() {
+			c.Router.PreHandle(req)
+			c.Router.Handle(req)
+			c.Router.PostHandle(req)
+		}()
 	}
-
-
 
 }
 
