@@ -4,6 +4,7 @@ import (
 	"zinx/zinx/z_interface"
 	"net"
 	"fmt"
+	"zinx/zinx/config"
 )
 
 type Server struct {
@@ -20,10 +21,10 @@ type Server struct {
 
 func NewServer(name string) z_interface.IServer {
 	s := &Server{
-		Name:name,
+		Name:config.GlobalObject.Name,
 		IPVersion:"tcp4",
-		IP:"0.0.0.0",
-		Port:8999,
+		IP:config.GlobalObject.Host,
+		Port:config.GlobalObject.Port,
 		Router:nil,
 	}
 	return s
@@ -41,7 +42,6 @@ func CallBackBusi(request z_interface.IRequest)error{
 	}
 
 	return nil
-
 }
 
 

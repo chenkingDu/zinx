@@ -4,6 +4,7 @@ import (
 	"net"
 	"zinx/zinx/z_interface"
 	"fmt"
+	"zinx/zinx/config"
 )
 
 //具体的TCP 连接模块
@@ -18,7 +19,8 @@ type Connection struct {
 	isClosed bool
 
 	//当前连接所绑定的业务处理方法
-	handleAPI z_interface.HandleFunc
+	//交给用户写自己的回调函数
+	//handleAPI z_interface.HandleFunc
 
 	//Router成员
 	Router z_interface.IRouter
@@ -43,7 +45,7 @@ func(c *Connection)StartRead(){
 	defer fmt.Println("ConnID = ",c.ConnID,"Reader is exit,remote addr is = ",c.GetRemoteAddr().String())
 	defer c.Stop()
 
-	buf := make([]byte,512)
+	buf := make([]byte,config.GlobalObject.MaxPackageSize)
 	for{
 		cnt ,err := c.Conn.Read(buf)
 		if err != nil{
