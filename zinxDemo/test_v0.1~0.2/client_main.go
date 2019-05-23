@@ -13,12 +13,14 @@ func main(){
 		return
 	}
 
+	_,err = conn.Write([]byte("zinx client come in!"))
+	if err != nil{
+		fmt.Println("Client Write err: ",err)
+		return
+	}
+
 	for {
-		_,err := conn.Write([]byte("zinx client come in!"))
-		if err != nil{
-			fmt.Println("Client Write err: ",err)
-			return
-		}
+
 		buf := make([]byte,512)
 		n,err := conn.Read(buf)
 		if err != nil{
