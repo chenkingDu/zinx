@@ -5,10 +5,12 @@ type IRequest interface {
 	GetConnection() IConnection
 
 	//得到数据内容
-	GetData() []byte
+	//GetData() []byte
 
 	//得到数据长度
-	GetDataLen() int
+	//GetDataLen() int
+
+	GetMsg() IMessage
 
 }
 

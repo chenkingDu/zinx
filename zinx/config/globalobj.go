@@ -36,7 +36,7 @@ func init(){
 		Host:"0.0.0.0",
 		Port:8999,
 		Name:"ZinxServerApp",
-		Version:"v0.4",
+		Version:"v0.5",
 		MaxPackageSize:512,
 	}
 	//配置文件读取

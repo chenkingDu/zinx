@@ -4,7 +4,9 @@ import (
 	"net"
 	"zinx/zinx/z_interface"
 	"fmt"
-	"zinx/zinx/config"
+	//"zinx/zinx/config"
+	"io"
+	"errors"
 )
 
 //具体的TCP 连接模块
@@ -45,15 +47,48 @@ func(c *Connection)StartRead(){
 	defer fmt.Println("ConnID = ",c.ConnID,"Reader is exit,remote addr is = ",c.GetRemoteAddr().String())
 	defer c.Stop()
 
-	buf := make([]byte,config.GlobalObject.MaxPackageSize)
+	//buf := make([]byte,config.GlobalObject.MaxPackageSize)
 	for{
+		/*
 		cnt ,err := c.Conn.Read(buf)
 		if err != nil{
 			fmt.Println("read buf err :",err)
 			continue
 		}
+		*/
 
-		req := NewRequest(c,buf,cnt)
+		//开始拆包
+		//创建datapack
+		dp := NewDataPack()
+
+		//读取头部信息
+		headdata := make([]byte,dp.HeadLen())
+		_,err := io.ReadFull(c.Conn,headdata)
+		if err != nil{
+			fmt.Println("read headdata error : ",err)
+			return
+		}
+
+		//根据头部进行第二次读取
+		headmsg,err := dp.UnPack(headdata)
+		if err != nil{
+			fmt.Println("unpack error : ",err)
+			return
+		}
+
+		data := make([]byte,headmsg.GetMsgLen())
+		if headmsg.GetMsgLen() > 0{
+			_,err := io.ReadFull(c.Conn,data)
+			if err != nil{
+				fmt.Println("read msg data error : ",err)
+				return
+			}
+			headmsg.SetMsgData(data)
+		}
+
+		msg := headmsg.(*Message)
+
+		req := NewRequest(c,msg)
 
 		//将数据传递给定义好的handle回调
 		//if err := c.handleAPI(c.Conn,buf,cnt);err != nil{
@@ -109,12 +144,39 @@ func(c *Connection)GetRemoteAddr()net.Addr{
 }
 
 //发送数据给对方客户端
-func(c *Connection)Send(data []byte,cnt int)error{
+func(c *Connection)Send(id uint32,data []byte)error{
+	/*
 	if _,err := c.Conn.Write(data[:cnt]);err != nil{
 		fmt.Println("send buf error")
 		return err
 	}
 	return nil
+	*/
+
+	//先检测连接是否关闭
+	if c.isClosed == true{
+		return errors.New("Cinnection is Closed..")
+	}
+
+	//先封包再发送
+	msg := NewMessage(id,data)
+
+	dp := NewDataPack()
+	binarymsg,err := dp.Pack(msg)
+	if err != nil{
+		fmt.Println("pack msg error : ",err)
+		return err
+	}
+
+	_,err = c.Conn.Write(binarymsg)
+	if err != nil{
+		fmt.Println("write msg error : ",err)
+		return err
+	}
+
+	return nil
+
+
 }
 
 

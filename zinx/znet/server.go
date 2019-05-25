@@ -31,6 +31,7 @@ func NewServer(name string) z_interface.IServer {
 }
 
 //定义一个具有回显功能 针对type HandleFunc func(*net.TCPConn,[]byte,int)error
+/*
 func CallBackBusi(request z_interface.IRequest)error{
 	fmt.Println("【conn Handle】 CallBack..")
 	conn := request.GetConnection().GetTCPConnection()
@@ -43,6 +44,7 @@ func CallBackBusi(request z_interface.IRequest)error{
 
 	return nil
 }
+*/
 
 
 

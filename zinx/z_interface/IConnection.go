@@ -19,7 +19,7 @@ type IConnection interface {
 	GetRemoteAddr() net.Addr
 
 	//发送数据给对方客户端
-	Send(data []byte,cnt int) error
+	Send(id uint32,data []byte) error
 
 }
 
