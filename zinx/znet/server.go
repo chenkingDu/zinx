@@ -16,7 +16,7 @@ type Server struct {
 	//服务器名称
 	Name string
 	//Router方法
-	Router z_interface.IRouter
+	msghandler z_interface.IMsgHandler
 }
 
 func NewServer(name string) z_interface.IServer {
@@ -25,7 +25,7 @@ func NewServer(name string) z_interface.IServer {
 		IPVersion:"tcp4",
 		IP:config.GlobalObject.Host,
 		Port:config.GlobalObject.Port,
-		Router:nil,
+		msghandler:NewMsgHandler(),
 	}
 	return s
 }
@@ -79,7 +79,8 @@ func (s *Server)Start(){
 
 
 			//dealConn := NewConnection(conn,cid,CallBackBusi)
-			dealConn := NewConnection(conn,cid,s.Router)
+			//dealConn := NewConnection(conn,cid,s.Router)
+			dealConn := NewConnection(conn,cid,s.msghandler)
 			cid ++
 
 			go dealConn.Start()
@@ -116,6 +117,12 @@ func (s *Server)Serve(){
 	select {}
 }
 //添加路由
+/*
 func(s *Server)AddRouter(router z_interface.IRouter){
 	s.Router = router
+}
+*/
+func(s *Server)AddMsgHandler(msgId uint32,router z_interface.IRouter){
+	s.msghandler.AddRouter(msgId,router)
+	fmt.Println("Add Router Success! msgId = ",msgId)
 }

@@ -25,18 +25,20 @@ type Connection struct {
 	//handleAPI z_interface.HandleFunc
 
 	//Router成员
-	Router z_interface.IRouter
+	//Router z_interface.IRouter
+	msgHandler z_interface.IMsgHandler
 
 }
 
 //初始化连接方法
-func NewConnection(conn *net.TCPConn,connID uint32,router z_interface.IRouter)z_interface.IConnection{
+func NewConnection(conn *net.TCPConn,connID uint32,handler z_interface.IMsgHandler)z_interface.IConnection{
 	c := &Connection{
 		Conn:conn,
 		ConnID:connID,
 		//handleAPI:callback_api,
 		isClosed:false,
-		Router:router,
+		//Router:router
+		msgHandler:handler,
 	}
 
 	return c
@@ -99,11 +101,16 @@ func(c *Connection)StartRead(){
 			break
 		}
 		*/
+
+		/*
 		go func() {
 			c.Router.PreHandle(req)
 			c.Router.Handle(req)
 			c.Router.PostHandle(req)
 		}()
+		*/
+		go c.msgHandler.DoMsgHandler(req)
+
 	}
 
 }
