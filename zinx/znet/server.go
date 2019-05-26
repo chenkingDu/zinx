@@ -58,6 +58,8 @@ func (s *Server)Start(){
 		return
 	}
 
+	s.msghandler.StartWorkerPool()
+
 	listenner ,err := net.ListenTCP(s.IPVersion,addr)
 	if err != nil{
 		fmt.Println("ListenTCP err:",err)

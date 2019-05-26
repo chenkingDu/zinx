@@ -11,6 +11,8 @@ type GlobalObj struct {
 	Name string		//当前zinx_server的名称
 	Version string	//当前框架的版本号
 	MaxPackageSize uint32	//定义读写缓冲区buf的大小
+	WorkerPoolSize uint32	//当前服务器要开启多少个worker
+	MaxWorkerTaskLen uint32	//每个worker对应的消息队列的长度
 }
 
 //定义一个全局的对外的配置对象
@@ -38,6 +40,8 @@ func init(){
 		Name:"ZinxServerApp",
 		Version:"v0.5",
 		MaxPackageSize:512,
+		WorkerPoolSize:10,
+		MaxWorkerTaskLen:4096,
 	}
 	//配置文件读取
 	//加载文件

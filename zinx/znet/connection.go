@@ -7,6 +7,7 @@ import (
 	//"zinx/zinx/config"
 	"io"
 	"errors"
+	"zinx/zinx/config"
 )
 
 //具体的TCP 连接模块
@@ -138,7 +139,14 @@ func(c *Connection)StartRead(){
 			c.Router.PostHandle(req)
 		}()
 		*/
-		go c.msgHandler.DoMsgHandler(req)
+		//将req交给worker处理
+		if config.GlobalObject.WorkerPoolSize > 0{
+			//启动了工作池
+			c.msgHandler.SendMsgToTaskQueue(req)
+		}else {
+			//没有启动工作池
+			go c.msgHandler.DoMsgHandler(req)
+		}
 
 	}
 
