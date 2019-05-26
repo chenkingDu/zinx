@@ -28,6 +28,12 @@ type Connection struct {
 	//Router z_interface.IRouter
 	msgHandler z_interface.IMsgHandler
 
+	//reader和writer之间的channal
+	msgChan chan []byte
+
+	//用来通知writer推出的channal
+	quit chan bool
+
 }
 
 //初始化连接方法
@@ -39,13 +45,36 @@ func NewConnection(conn *net.TCPConn,connID uint32,handler z_interface.IMsgHandl
 		isClosed:false,
 		//Router:router
 		msgHandler:handler,
+		//初始化channal
+		msgChan:make(chan []byte),
+		quit:make(chan bool),
 	}
 
 	return c
 }
 
+func(c *Connection)StartWrite(){
+	fmt.Println("Writer go is starting ....")
+	defer fmt.Println("Writer go is Closed ....")
+
+	for {
+		select {
+		//阻塞读数据
+		case data := <-c.msgChan:
+			if _,err := c.Conn.Write(data);err != nil{
+				fmt.Println("Write msg error : ",err)
+			}
+		//等待退出
+		case <-c.quit:
+			return
+		}
+	}
+
+}
+
 func(c *Connection)StartRead(){
 	fmt.Println("Reader go is starting ....")
+	defer fmt.Println("Reader go is Closed ....")
 	defer fmt.Println("ConnID = ",c.ConnID,"Reader is exit,remote addr is = ",c.GetRemoteAddr().String())
 	defer c.Stop()
 
@@ -121,6 +150,8 @@ func(c *Connection)Start(){
 
 	go c.StartRead()
 
+	go c.StartWrite()
+
 
 }
 
@@ -131,6 +162,11 @@ func(c *Connection)Stop(){
 		return
 	}
 	c.isClosed = true
+
+	c.quit<-true
+
+	close(c.msgChan)
+	close(c.quit)
 
 	c.Conn.Close()
 }
@@ -175,11 +211,15 @@ func(c *Connection)Send(id uint32,data []byte)error{
 		return err
 	}
 
+	/*
 	_,err = c.Conn.Write(binarymsg)
 	if err != nil{
 		fmt.Println("write msg error : ",err)
 		return err
 	}
+	*/
+	//将打包好的数据，交给管道
+	c.msgChan<-binarymsg
 
 	return nil
 
