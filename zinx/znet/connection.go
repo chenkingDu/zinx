@@ -35,10 +35,13 @@ type Connection struct {
 	//用来通知writer推出的channal
 	quit chan bool
 
+	//当前连接对应的server
+	server z_interface.IServer
+
 }
 
 //初始化连接方法
-func NewConnection(conn *net.TCPConn,connID uint32,handler z_interface.IMsgHandler)z_interface.IConnection{
+func NewConnection(server z_interface.IServer,conn *net.TCPConn,connID uint32,handler z_interface.IMsgHandler)z_interface.IConnection{
 	c := &Connection{
 		Conn:conn,
 		ConnID:connID,
@@ -49,7 +52,11 @@ func NewConnection(conn *net.TCPConn,connID uint32,handler z_interface.IMsgHandl
 		//初始化channal
 		msgChan:make(chan []byte),
 		quit:make(chan bool),
+		server:server,
 	}
+
+	//当已经成功创建一个连接的时候,添加到连接管理器中
+	c.server.GetConnMgr().Add(c)
 
 	return c
 }
@@ -160,18 +167,29 @@ func(c *Connection)Start(){
 
 	go c.StartWrite()
 
+	//创建连接后,调用OnConnStart()
+	c.server.CallOnConnStart(c)
 
 }
 
 //停止连接
 func(c *Connection)Stop(){
 	fmt.Println("c.Stop() ....")
+
+	//创建销毁前,调用OnConnStop()
+	c.server.CallOnConnStop(c)
+
 	if c.isClosed == true{
 		return
 	}
+
+	//回收工作
 	c.isClosed = true
 
 	c.quit<-true
+
+	//连接断开时,把连接从map中删除
+	c.server.GetConnMgr().Remove(c.ConnID)
 
 	close(c.msgChan)
 	close(c.quit)

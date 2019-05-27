@@ -13,6 +13,7 @@ type GlobalObj struct {
 	MaxPackageSize uint32	//定义读写缓冲区buf的大小
 	WorkerPoolSize uint32	//当前服务器要开启多少个worker
 	MaxWorkerTaskLen uint32	//每个worker对应的消息队列的长度
+	MaxConn uint32	//最大连接数
 }
 
 //定义一个全局的对外的配置对象
@@ -42,6 +43,7 @@ func init(){
 		MaxPackageSize:512,
 		WorkerPoolSize:10,
 		MaxWorkerTaskLen:4096,
+		MaxConn:10,
 	}
 	//配置文件读取
 	//加载文件
