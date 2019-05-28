@@ -8,6 +8,7 @@ import (
 	"io"
 	"errors"
 	"zinx/zinx/config"
+	"sync"
 )
 
 //具体的TCP 连接模块
@@ -38,6 +39,12 @@ type Connection struct {
 	//当前连接对应的server
 	server z_interface.IServer
 
+	//链接的属性
+	property map[string]interface{}
+
+	//对属性操作所需要的锁
+	propLock sync.RWMutex
+
 }
 
 //初始化连接方法
@@ -53,6 +60,7 @@ func NewConnection(server z_interface.IServer,conn *net.TCPConn,connID uint32,ha
 		msgChan:make(chan []byte),
 		quit:make(chan bool),
 		server:server,
+		property:make(map[string]interface{}),
 	}
 
 	//当已经成功创建一个连接的时候,添加到连接管理器中
@@ -249,7 +257,32 @@ func(c *Connection)Send(id uint32,data []byte)error{
 
 	return nil
 
-
 }
 
+//设置属性
+func(c *Connection)SetProperty(key string,value interface{}){
+	//先加锁
+	c.propLock.Lock()
+	defer c.propLock.Unlock()
 
+	c.property[key] = value
+}
+//查找属性
+func(c *Connection)GetProperty(key string)(interface{},error){
+	//先加锁
+	c.propLock.RLock()
+	defer c.propLock.RUnlock()
+
+	if value,ok := c.property[key];ok{
+		return value,nil
+	}
+	return nil,errors.New("Not Found This Property..")
+}
+//删除属性
+func(c *Connection)DelProperty(key string){
+	//先加锁
+	c.propLock.Lock()
+	defer c.propLock.Unlock()
+
+	delete(c.property,key)
+}
